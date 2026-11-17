@@ -75,10 +75,13 @@ jobs:
           NOTES=$(grep -m1 -F -- "- $VERSION:" README.md || true)
           [ -n "$NOTES" ] || NOTES="Version $VERSION"
           echo "$NOTES" > .release/notes.txt
-          META=$(jq -n --arg name "$ADDON $VERSION" --arg notes "$NOTES" --argjson gv "$GV" \
-            '{displayName: $name, releaseType: "release", gameVersions: [$gv], changelog: $notes, changelogType: "markdown"}')
+          # metadata goes in a file: curl would cut a ";" in the changelog text short
+          jq -cn --arg name "$ADDON $VERSION" --arg notes "$NOTES" --argjson gv "$GV" \
+            '{displayName: $name, releaseType: "release", gameVersions: [$gv], changelog: $notes, changelogType: "markdown"}' \
+            > .release/metadata.json
+          cat .release/metadata.json
           curl -sS --fail-with-body -H "X-Api-Token: $CF_API_KEY" \
-            -F "metadata=$META" -F "file=@.release/$ADDON-$VERSION.zip" \
+            -F "metadata=<.release/metadata.json" -F "file=@.release/$ADDON-$VERSION.zip" \
             "$API/projects/$PROJECT_ID/upload-file"
           echo
           echo "Uploaded $ADDON $VERSION to CurseForge project $PROJECT_ID"
