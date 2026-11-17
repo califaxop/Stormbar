@@ -23,6 +23,7 @@ Known limits
 - Positions are saved once, not per Edit Mode layout.
 
 Changelogs
+- 1.2.0: Settings window and Edit Mode dialog restyled to match XP Planner and Spell Glow (FlareUI's look when installed).
 - 1.1.2: Released automatically from GitHub; no in-game changes.
 - 1.1.1: Logo in the AddOns list.
 - 1.1.0: Choose the tracked weapon: Main Hand, Off Hand or Ranged.
