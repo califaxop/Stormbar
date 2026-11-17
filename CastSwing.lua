@@ -42,6 +42,7 @@ local COLORS = {
   cast    = { 1.00, 0.70, 0.00 },
   channel = { 0.30, 0.80, 0.30 },
   fail    = { 0.90, 0.20, 0.20 },
+  done    = { 0.20, 0.95, 0.30 },  -- a cast that went off
   swing   = { 0.80, 0.62, 0.36 },
 }
 -- The weapon whose swings are shown: its swing type (Forever's PLAYER_SWING), inventory slot,
@@ -59,7 +60,7 @@ C.WEAPONS = WEAPONS
 local function Tracked() return WEAPONS[ns.db.swingWeapon] or WEAPONS.main end
 
 -- state
-local mode = "idle"       -- "idle" | "swing" | "cast" | "channel" | "fail"
+local mode = "idle"       -- "idle" | "swing" | "cast" | "channel" | "fail" | "done"
 local castStart, castEnd = 0, 0
 local swingStart, swingDur = 0, 0
 local failUntil = 0
@@ -99,14 +100,23 @@ local function StartCast(channel)
   f:SetAlpha(1)
 end
 
+-- a cast (or channel) that completed: the full bar flashes green for a moment
+local function CastDone()
+  if mode ~= "cast" and mode ~= "channel" then return end
+  mode = "done"; failUntil = GetTime() + 0.4
+  SetColor(ns.db.castSwing.doneColor or COLORS.done); bar:SetValue(1); spark:Hide(); rightText:SetText("")
+end
+
 local function EndCast(failed)
   if mode ~= "cast" and mode ~= "channel" then return end
   if failed then
     mode = "fail"; failUntil = GetTime() + 0.5
     SetColor(COLORS.fail); bar:SetValue(1); spark:Hide()
     leftText:SetText(failed); rightText:SetText("")
+  elseif mode == "channel" and GetTime() >= castEnd - 0.25 then
+    CastDone() -- the channel ran to its end
   else
-    ShowSwingIdle()
+    ShowSwingIdle() -- cancelled
   end
 end
 
@@ -116,12 +126,18 @@ f:SetScript("OnUpdate", function()
   if mode == "cast" or mode == "channel" then
     local total = castEnd - castStart
     local p = total > 0 and (now - castStart) / total or 1
-    if p >= 1 then ShowSwingIdle(); return end
+    if p >= 1 then
+      if mode == "channel" then CastDone(); return end
+      -- a cast: hold it full until the game says it went off (then green) or stopped
+      bar:SetValue(1); spark:Hide(); rightText:SetText("")
+      if now > castEnd + 0.5 then ShowSwingIdle() end
+      return
+    end
     if mode == "channel" then p = 1 - p end
     bar:SetValue(p)
     spark:SetPoint("CENTER", bar, "LEFT", bar:GetWidth() * p, 0); spark:Show()
     rightText:SetText(showTime and format("%.1f", math.max(0, castEnd - now)) or "")
-  elseif mode == "fail" then
+  elseif mode == "fail" or mode == "done" then
     if now >= failUntil then ShowSwingIdle() end
   elseif mode == "swing" then
     local p = swingDur > 0 and (now - swingStart) / swingDur or 1
@@ -147,6 +163,8 @@ ev:SetScript("OnEvent", function(_, event, arg1, arg2)
     StartCast(false)
   elseif event == "UNIT_SPELLCAST_CHANNEL_START" or event == "UNIT_SPELLCAST_CHANNEL_UPDATE" then
     StartCast(true)
+  elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
+    if mode == "cast" then CastDone() end -- instant casts have no bar: nothing to flash
   elseif event == "UNIT_SPELLCAST_INTERRUPTED" then
     EndCast(_G.INTERRUPTED or "Interrupted")
   elseif event == "UNIT_SPELLCAST_FAILED" then
@@ -226,7 +244,7 @@ function C.Init()
   ev:RegisterEvent("PLAYER_DEAD")
   ev:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
   ev:RegisterEvent("PLAYER_ENTERING_WORLD")
-  for _, e in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_DELAYED", "UNIT_SPELLCAST_STOP",
+  for _, e in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_DELAYED", "UNIT_SPELLCAST_STOP", "UNIT_SPELLCAST_SUCCEEDED",
     "UNIT_SPELLCAST_FAILED", "UNIT_SPELLCAST_INTERRUPTED", "UNIT_SPELLCAST_CHANNEL_START",
     "UNIT_SPELLCAST_CHANNEL_UPDATE", "UNIT_SPELLCAST_CHANNEL_STOP" }) do
     ev:RegisterUnitEvent(e, "player")

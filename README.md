@@ -5,7 +5,7 @@ Stormbar shows your weapon swing timer with the icon of the weapon you're tracki
 
 Features
 - Choose the weapon tracked: Main Hand, Off Hand, or Ranged (wands, guns, bows, thrown).
-- Cast and channel bar with spell icon, name and time left; red flash on interrupt.
+- Cast and channel bar with spell icon, name and time left; a green flash when a cast goes off (color of your choice), red on interrupt.
 - FlareUI style when installed: its bronze borders, bar texture and swing colors.
 - Can hide Blizzard's cast bar, FlareUI's Player Cast Bar, and FlareUI's swing bar for the same weapon.
 - Move it in Edit Mode: drag, snap to Edit Mode's grid, arrow keys to nudge (Shift for 10 px), click for its options.
@@ -23,7 +23,7 @@ Known limits
 - Positions are saved once, not per Edit Mode layout.
 
 Changelogs
-- 1.2.0: Settings window and Edit Mode dialog restyled to match XP Planner and Spell Glow (FlareUI's look when installed).
+- 1.2.0: Settings window and Edit Mode dialog restyled to match XP Planner and Spell Glow (FlareUI's look when installed); the bar flashes green when a cast goes off (color in the options).
 - 1.1.2: Released automatically from GitHub; no in-game changes.
 - 1.1.1: Logo in the AddOns list.
 - 1.1.0: Choose the tracked weapon: Main Hand, Off Hand or Ranged.

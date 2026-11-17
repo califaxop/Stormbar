@@ -39,6 +39,47 @@ local WEAPONS = {
   { "ranged", (_G.SWING_TIMER_RANGED or "Ranged") .. " (wand / gun / bow)" },
 }
 
+-- A color square: click for the game's color picker (Cancel restores the old color).
+local function ColorSwatch(parent, label, path, width)
+  local f = CreateFrame("Button", nil, parent)
+  f:SetSize(width, 20)
+  local sq = CreateFrame("Frame", nil, f, "BackdropTemplate")
+  sq:SetSize(14, 14); sq:SetPoint("LEFT", 0, 0)
+  sq:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+  local text = UI.Text(f, "line", label)
+  text:SetPoint("LEFT", sq, "RIGHT", 7, 0)
+  local hover = false
+  local function color() return S(path)[1]() end
+  local function paint(th)
+    th = th or UI.Theme()
+    local c = ns.db and color()
+    if c then sq:SetBackdropColor(c[1], c[2], c[3]) end
+    sq:SetBackdropBorderColor(UI.RGB(hover and th.title or th.accent))
+    text:SetTextColor(UI.RGB(hover and th.hover or th.line))
+  end
+  UI.Skin(paint)
+  f:SetScript("OnEnter", function() hover = true; paint() end)
+  f:SetScript("OnLeave", function() hover = false; paint() end)
+  f:SetScript("OnClick", function()
+    local c = color()
+    local r, g, b = c[1], c[2], c[3]
+    local function apply()
+      local nr, ng, nb = ColorPickerFrame:GetColorRGB()
+      c[1], c[2], c[3] = nr, ng, nb; paint(); ApplyAll()
+    end
+    local function cancel() c[1], c[2], c[3] = r, g, b; paint(); ApplyAll() end
+    if ColorPickerFrame.SetupColorPickerAndShow then
+      ColorPickerFrame:SetupColorPickerAndShow({ r = r, g = g, b = b, hasOpacity = false, swatchFunc = apply, cancelFunc = cancel })
+    else
+      ColorPickerFrame.func, ColorPickerFrame.cancelFunc = apply, cancel
+      ColorPickerFrame.hasOpacity, ColorPickerFrame.previousValues = false, { r = r, g = g, b = b }
+      ColorPickerFrame:SetColorRGB(r, g, b); ColorPickerFrame:Show()
+    end
+  end)
+  f.Refresh = function() paint() end
+  return f
+end
+
 -- The bar's options, shared by the settings window and the Edit Mode dialog.
 -- Places them top to bottom at (x, y) in `parent`, `width` wide; returns the widgets and the y below.
 local function BarOptions(parent, x, y, width)
@@ -52,6 +93,7 @@ local function BarOptions(parent, x, y, width)
   add(UI.Check(parent, "Icon (weapon, or the spell while casting)", S("castSwing.showIcon"), width, ApplyAll), 24)
   add(UI.Check(parent, "Time remaining", S("castSwing.showTime"), width, ApplyAll), 24)
   add(UI.Check(parent, "Hide when not swinging or casting", S("castSwing.hideIdle"), width, ApplyAll), 24)
+  add(ColorSwatch(parent, "Color when a cast goes off", "castSwing.doneColor", width), 24)
   return w, y
 end
 
@@ -60,7 +102,7 @@ end
 ---------------------------------------------------------------------------
 local window
 local function BuildWindow()
-  window = UI.Window("StormbarOptionsWindow", 580, 430)
+  window = UI.Window("StormbarOptionsWindow", 580, 456)
   window:SetPoint("CENTER")
   local title = UI.Text(window, "title", "Stormbar")
   title:SetPoint("TOPLEFT", 26, -20)

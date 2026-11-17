@@ -16,7 +16,8 @@ ns.DEFAULTS = {
   hideFlareSwing = true, -- hide FlareUI's swing bar for the weapon Stormbar tracks
   swingWeapon   = "main", -- "main" | "off" | "ranged" (wands, guns, bows, thrown)
   scale         = 1.0,
-  castSwing     = { width = 260, height = 16, showIcon = true, showTime = true, hideIdle = false },
+  castSwing     = { width = 260, height = 16, showIcon = true, showTime = true, hideIdle = false,
+                    doneColor = { 0.20, 0.95, 0.30 } },  -- the bar's flash when a cast goes off
   pos           = {},
 }
 
