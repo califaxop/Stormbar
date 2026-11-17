@@ -23,6 +23,7 @@ Known limits
 - Positions are saved once, not per Edit Mode layout.
 
 Changelogs
+- 1.1.2: Released automatically from GitHub; no in-game changes.
 - 1.1.1: Logo in the AddOns list.
 - 1.1.0: Choose the tracked weapon: Main Hand, Off Hand or Ranged.
 - 1.0.5: Arrow-key nudge in Edit Mode (Shift = 10 px).
