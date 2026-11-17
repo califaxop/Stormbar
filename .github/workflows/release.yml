@@ -1,7 +1,7 @@
 # Releases the addon to CurseForge whenever a push to main changes the toc's "## Version:".
 # The upload notes are that version's line under "Changelogs" in README.md.
 # After a successful upload, the version is tagged (v1.2.3); a tagged version is never uploaded again.
-# Needs the repository secret CF_API_KEY (a CurseForge API token).
+# Needs the repository secret PJ_API_KEY (a CurseForge API token).
 # "Run workflow" on the Actions tab releases the current version by hand (unless it's already tagged).
 name: Release
 
@@ -62,11 +62,11 @@ jobs:
       - name: Upload to CurseForge
         if: steps.check.outputs.release == 'yes'
         env:
-          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          CF_API_KEY: ${{ secrets.PJ_API_KEY }}
         run: |
           set -o pipefail
           if [ -z "$CF_API_KEY" ]; then
-            echo "::error::The CF_API_KEY secret is missing: add it under Settings > Secrets and variables > Actions > Repository secrets"; exit 1
+            echo "::error::The PJ_API_KEY secret is missing: add it under Settings > Secrets and variables > Actions > Repository secrets"; exit 1
           fi
           API=https://wow.curseforge.com/api
           GV=$(curl -sS --fail-with-body -H "X-Api-Token: $CF_API_KEY" "$API/game/versions" \
