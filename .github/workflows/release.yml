@@ -1,0 +1,60 @@
+# Push a version tag (for example v1.6.1) and this builds the addon zip and uploads it to CurseForge.
+# Needs the repository secret CF_API_KEY (a CurseForge API token).
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  GAME_VERSION: "1.60.1"   # the WoW: Forever version on CurseForge
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read the addon's toc
+        run: |
+          TOC=$(ls *.toc | head -n1)
+          ADDON=${TOC%.toc}
+          VERSION=${GITHUB_REF_NAME#v}
+          TOC_VERSION=$(sed -n 's/^## Version: *//p' "$TOC" | tr -d '\r')
+          PROJECT_ID=$(sed -n 's/^## X-Curse-Project-ID: *//p' "$TOC" | tr -d '\r')
+          if [ "$TOC_VERSION" != "$VERSION" ]; then
+            echo "::error::tag $GITHUB_REF_NAME doesn't match ## Version: $TOC_VERSION in $TOC"; exit 1
+          fi
+          if [ -z "$PROJECT_ID" ]; then echo "::error::no ## X-Curse-Project-ID in $TOC"; exit 1; fi
+          echo "ADDON=$ADDON" >> "$GITHUB_ENV"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
+
+      - name: Build the zip
+        run: |
+          mkdir -p ".release/$ADDON"
+          rsync -a --exclude='.git*' --exclude='.github' --exclude='.release' \
+            --exclude='README.md' --exclude='CHANGELOG.md' --exclude='*.zip' ./ ".release/$ADDON/"
+          (cd .release && zip -qr "$ADDON-$VERSION.zip" "$ADDON")
+          unzip -l ".release/$ADDON-$VERSION.zip"
+
+      - name: Upload to CurseForge
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+        run: |
+          API=https://wow.curseforge.com/api
+          GV=$(curl -sS --fail-with-body -H "X-Api-Token: $CF_API_KEY" "$API/game/versions" \
+            | jq -r --arg n "$GAME_VERSION" '[.[] | select(.name == $n)][0].id // empty')
+          if [ -z "$GV" ]; then echo "::error::CurseForge has no game version named $GAME_VERSION"; exit 1; fi
+          NOTES=$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME")
+          [ -n "$NOTES" ] || NOTES="Version $VERSION"
+          META=$(jq -n --arg name "$ADDON $VERSION" --arg notes "$NOTES" --argjson gv "$GV" \
+            '{displayName: $name, releaseType: "release", gameVersions: [$gv], changelog: $notes, changelogType: "markdown"}')
+          curl -sS --fail-with-body -H "X-Api-Token: $CF_API_KEY" \
+            -F "metadata=$META" -F "file=@.release/$ADDON-$VERSION.zip" \
+            "$API/projects/$PROJECT_ID/upload-file"
+          echo
+          echo "Uploaded $ADDON $VERSION to CurseForge project $PROJECT_ID"
