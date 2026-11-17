@@ -64,6 +64,10 @@ jobs:
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
         run: |
+          set -o pipefail
+          if [ -z "$CF_API_KEY" ]; then
+            echo "::error::The CF_API_KEY secret is missing: add it under Settings > Secrets and variables > Actions > Repository secrets"; exit 1
+          fi
           API=https://wow.curseforge.com/api
           GV=$(curl -sS --fail-with-body -H "X-Api-Token: $CF_API_KEY" "$API/game/versions" \
             | jq -r --arg n "$GAME_VERSION" '[.[] | select(.name == $n)][0].id // empty')
