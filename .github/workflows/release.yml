@@ -1,11 +1,21 @@
-# Push a version tag (for example v1.6.1) and this builds the addon zip and uploads it to CurseForge.
+# Releases the addon to CurseForge whenever a push to main changes the toc's "## Version:".
+# The upload notes are that version's line under "Changelogs" in README.md.
+# After a successful upload, the version is tagged (v1.2.3); a tagged version is never uploaded again.
 # Needs the repository secret CF_API_KEY (a CurseForge API token).
+# "Run workflow" on the Actions tab releases the current version by hand (unless it's already tagged).
 name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main]
+    paths: ["*.toc"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
 
 env:
   GAME_VERSION: "1.60.1"   # the WoW: Forever version on CurseForge
@@ -18,22 +28,30 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Read the addon's toc
+      - name: Should this version be released?
+        id: check
         run: |
           TOC=$(ls *.toc | head -n1)
           ADDON=${TOC%.toc}
-          VERSION=${GITHUB_REF_NAME#v}
-          TOC_VERSION=$(sed -n 's/^## Version: *//p' "$TOC" | tr -d '\r')
+          VERSION=$(sed -n 's/^## Version: *//p' "$TOC" | tr -d '\r')
           PROJECT_ID=$(sed -n 's/^## X-Curse-Project-ID: *//p' "$TOC" | tr -d '\r')
-          if [ "$TOC_VERSION" != "$VERSION" ]; then
-            echo "::error::tag $GITHUB_REF_NAME doesn't match ## Version: $TOC_VERSION in $TOC"; exit 1
+          if [ -z "$VERSION" ] || [ -z "$PROJECT_ID" ]; then
+            echo "::error::$TOC needs ## Version and ## X-Curse-Project-ID"; exit 1
           fi
-          if [ -z "$PROJECT_ID" ]; then echo "::error::no ## X-Curse-Project-ID in $TOC"; exit 1; fi
           echo "ADDON=$ADDON" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
+          RELEASE=yes
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "v$VERSION is already released"; RELEASE=no
+          elif [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            OLD=$(git show "${{ github.event.before }}:$TOC" 2>/dev/null | sed -n 's/^## Version: *//p' | tr -d '\r')
+            if [ "$OLD" = "$VERSION" ]; then echo "version unchanged ($VERSION)"; RELEASE=no; fi
+          fi
+          echo "release=$RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Build the zip
+        if: steps.check.outputs.release == 'yes'
         run: |
           mkdir -p ".release/$ADDON"
           rsync -a --exclude='.git*' --exclude='.github' --exclude='.release' \
@@ -42,6 +60,7 @@ jobs:
           unzip -l ".release/$ADDON-$VERSION.zip"
 
       - name: Upload to CurseForge
+        if: steps.check.outputs.release == 'yes'
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
         run: |
@@ -49,8 +68,9 @@ jobs:
           GV=$(curl -sS --fail-with-body -H "X-Api-Token: $CF_API_KEY" "$API/game/versions" \
             | jq -r --arg n "$GAME_VERSION" '[.[] | select(.name == $n)][0].id // empty')
           if [ -z "$GV" ]; then echo "::error::CurseForge has no game version named $GAME_VERSION"; exit 1; fi
-          NOTES=$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME")
+          NOTES=$(grep -m1 -F -- "- $VERSION:" README.md || true)
           [ -n "$NOTES" ] || NOTES="Version $VERSION"
+          echo "$NOTES" > .release/notes.txt
           META=$(jq -n --arg name "$ADDON $VERSION" --arg notes "$NOTES" --argjson gv "$GV" \
             '{displayName: $name, releaseType: "release", gameVersions: [$gv], changelog: $notes, changelogType: "markdown"}')
           curl -sS --fail-with-body -H "X-Api-Token: $CF_API_KEY" \
@@ -58,3 +78,11 @@ jobs:
             "$API/projects/$PROJECT_ID/upload-file"
           echo
           echo "Uploaded $ADDON $VERSION to CurseForge project $PROJECT_ID"
+
+      - name: Tag the released version
+        if: steps.check.outputs.release == 'yes'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" -F .release/notes.txt
+          git push origin "v$VERSION"
