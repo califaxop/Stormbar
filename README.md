@@ -1,37 +1,34 @@
 # Stormbar
-Your swing timer and cast bar, merged into one clean bar.
 
-Stormbar shows your weapon swing timer with the icon of the weapon you're tracking. When you cast or channel, the cast bar takes its place with the spell's icon, then the swing timer returns. Swings come from Forever's own swing event, so the timer follows only your attacks.
+**Your swing timer and cast bar, merged into one clean bar.**
 
-Features
-- Choose the weapon tracked: Main Hand, Off Hand, or Ranged (wands, guns, bows, thrown).
-- Cast and channel bar with spell icon, name and time left; a green flash when a cast goes off (color of your choice), red on interrupt.
-- FlareUI style when installed: its bronze borders, bar texture and swing colors.
-- Can hide Blizzard's cast bar, FlareUI's Player Cast Bar, and FlareUI's swing bar for the same weapon.
-- Move it in Edit Mode: drag, snap to Edit Mode's grid, arrow keys to nudge (Shift for 10 px), click for its options.
+Swing timer while you fight, cast bar while you cast, then right back to the swing. One bar, no clutter.
 
-Settings and commands
-- /stormbar or /stb: settings (weapon, scale, width, height, icon, time, hide when idle, FlareUI style, what to hide).
-- Sliders move in steps of 1, with a box to type exact values.
-- /stb lock / unlock, /stb reset, /stb debug.
+## Highlights
+- **Swing timer:** Main Hand, Off Hand or Ranged, with your weapon's icon.
+- **Cast bar:** spell icon, name and time left; channels included.
+- **Clear feedback:** flashes your success color when a cast goes off, red when it's interrupted.
+- **FlareUI style:** matches FlareUI's borders and bars when installed.
+- **Replaces clutter:** can hide Blizzard's and FlareUI's cast and swing bars.
+- **Edit Mode:** drag, snap to grid, nudge with arrow keys, click for options.
 
-Requirements
-- WoW: Forever (client 16001). Optional: FlareUI.
+## Quick start
+1. Type `/stormbar` (or `/stb`) and pick your weapon.
+2. Open Edit Mode to move the bar.
 
-Known limits
-- The swing timer needs Forever's swing event; on a client without it, only the cast bar works.
-- Positions are saved once, not per Edit Mode layout.
+## Commands
+| Command | Does |
+|---|---|
+| `/stb` | Open settings |
+| `/stb unlock` / `lock` | Move the bar without Edit Mode |
+| `/stb reset` | Reset its position |
+| `/stb debug` | Show what the bar sees |
 
-Changelogs
-- 1.2.1: No more red flash when you move in the last moment of a cast that still goes through; failures of other spells no longer affect the bar.
-- 1.2.0: Settings window and Edit Mode dialog restyled to match XP Planner and Spell Glow (FlareUI's look when installed); the bar flashes green when a cast goes off (color in the options).
-- 1.1.2: Released automatically from GitHub; no in-game changes.
-- 1.1.1: Logo in the AddOns list.
-- 1.1.0: Choose the tracked weapon: Main Hand, Off Hand or Ranged.
-- 1.0.5: Arrow-key nudge in Edit Mode (Shift = 10 px).
-- 1.0.4: Sliders in steps of 1 with number boxes; backdrop fit fixed.
-- 1.0.3: Fixed the addon not loading (client version line).
-- 1.0.2: Options dialog no longer moves while resizing.
-- 1.0.1: Hides FlareUI's cast bar; bar drawn above FlareUI's.
-- 1.0.0: Simplified to one merged swing timer and cast bar.
-- 0.1.0 – 0.4.0: Early action bar builds with Edit Mode support.
+## Good to know
+- The swing timer needs WoW: Forever's swing event; without it, only the cast bar works.
+- Positions aren't saved per Edit Mode layout.
+
+## Recent changes
+- **1.2.1:** No more red flash for casts that go through at the last moment.
+- **1.2.0:** New settings style; success flash with your own color.
+- **1.1.0:** Choose which weapon's swing to track.
