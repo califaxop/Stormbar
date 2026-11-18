@@ -23,6 +23,7 @@ Known limits
 - Positions are saved once, not per Edit Mode layout.
 
 Changelogs
+- 1.2.1: No more red flash when you move in the last moment of a cast that still goes through; failures of other spells no longer affect the bar.
 - 1.2.0: Settings window and Edit Mode dialog restyled to match XP Planner and Spell Glow (FlareUI's look when installed); the bar flashes green when a cast goes off (color in the options).
 - 1.1.2: Released automatically from GitHub; no in-game changes.
 - 1.1.1: Logo in the AddOns list.

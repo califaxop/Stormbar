@@ -60,10 +60,13 @@ C.WEAPONS = WEAPONS
 local function Tracked() return WEAPONS[ns.db.swingWeapon] or WEAPONS.main end
 
 -- state
-local mode = "idle"       -- "idle" | "swing" | "cast" | "channel" | "fail" | "done"
+local mode = "idle"       -- "idle" | "swing" | "cast" | "channel" | "fail" | "done" | "pending"
 local castStart, castEnd = 0, 0
 local swingStart, swingDur = 0, 0
 local failUntil = 0
+local castGUID            -- the cast on the bar (events about other casts are ignored)
+local castName
+local failAt, pendingUntil, pendingText = 0, 0, nil
 
 local function SwingColor()
   return ns.UsingFlare() and Tracked().color or COLORS.swing
@@ -95,22 +98,40 @@ local function StartCast(channel)
   mode = channel and "channel" or "cast"
   castStart, castEnd = startMS / 1000, endMS / 1000
   SetColor(channel and COLORS.channel or COLORS.cast)
-  leftText:SetText(ns.Readable(name) and name or "")
+  castName = ns.Readable(name) and name or ""
+  leftText:SetText(castName)
   SetIcon(tex) -- the spell being cast
   f:SetAlpha(1)
 end
 
--- a cast (or channel) that completed: the full bar flashes green for a moment
+-- is this event about the cast on the bar? (if the game hides the ID, assume it is)
+local function Mine(guid)
+  if castGUID == nil or guid == nil or isSecret(guid) or isSecret(castGUID) then return true end
+  return guid == castGUID
+end
+
+-- a cast (or channel) that completed: the full bar flashes green for a moment. Also overrides an
+-- interrupt shown in the last moment, when the game then confirms the cast went through.
 local function CastDone()
-  if mode ~= "cast" and mode ~= "channel" then return end
+  local lateFail = (mode == "fail" and GetTime() - failAt < 0.6)
+  if mode ~= "cast" and mode ~= "channel" and mode ~= "pending" and not lateFail then return end
   mode = "done"; failUntil = GetTime() + 0.4
   SetColor(ns.db.castSwing.doneColor or COLORS.done); bar:SetValue(1); spark:Hide(); rightText:SetText("")
+  if castName then leftText:SetText(castName) end
 end
 
 local function EndCast(failed)
   if mode ~= "cast" and mode ~= "channel" then return end
   if failed then
-    mode = "fail"; failUntil = GetTime() + 0.5
+    local now = GetTime()
+    -- moving in the last moment: the client says "interrupted" before the server confirms the cast
+    -- went through. Wait a moment for that before showing red.
+    if mode == "cast" and now >= castEnd - 0.3 then
+      mode = "pending"; pendingUntil = now + 0.3; pendingText = failed
+      bar:SetValue(1); spark:Hide(); rightText:SetText("")
+      return
+    end
+    mode = "fail"; failUntil = now + 0.5; failAt = now
     SetColor(COLORS.fail); bar:SetValue(1); spark:Hide()
     leftText:SetText(failed); rightText:SetText("")
   elseif mode == "channel" and GetTime() >= castEnd - 0.25 then
@@ -137,6 +158,12 @@ f:SetScript("OnUpdate", function()
     bar:SetValue(p)
     spark:SetPoint("CENTER", bar, "LEFT", bar:GetWidth() * p, 0); spark:Show()
     rightText:SetText(showTime and format("%.1f", math.max(0, castEnd - now)) or "")
+  elseif mode == "pending" then
+    -- no confirmation came: it really was interrupted
+    if now >= pendingUntil then
+      mode = "fail"; failUntil = now + 0.5; failAt = now
+      SetColor(COLORS.fail); leftText:SetText(pendingText or (_G.INTERRUPTED or "Interrupted"))
+    end
   elseif mode == "fail" or mode == "done" then
     if now >= failUntil then ShowSwingIdle() end
   elseif mode == "swing" then
@@ -160,15 +187,19 @@ ev:SetScript("OnEvent", function(_, event, arg1, arg2)
       mode = "swing"; SetColor(SwingColor()); ShowWeaponIcon(); leftText:SetText(Tracked().text); f:SetAlpha(1)
     end
   elseif event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_DELAYED" then
+    if event == "UNIT_SPELLCAST_START" then castGUID = arg2 end
     StartCast(false)
   elseif event == "UNIT_SPELLCAST_CHANNEL_START" or event == "UNIT_SPELLCAST_CHANNEL_UPDATE" then
+    if event == "UNIT_SPELLCAST_CHANNEL_START" then castGUID = arg2 end
     StartCast(true)
   elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
-    if mode == "cast" then CastDone() end -- instant casts have no bar: nothing to flash
+    -- instant casts have no bar: nothing to flash
+    if Mine(arg2) and (mode == "cast" or mode == "pending" or mode == "fail") then CastDone() end
   elseif event == "UNIT_SPELLCAST_INTERRUPTED" then
-    EndCast(_G.INTERRUPTED or "Interrupted")
+    if Mine(arg2) then EndCast(_G.INTERRUPTED or "Interrupted") end
   elseif event == "UNIT_SPELLCAST_FAILED" then
-    if mode == "cast" then EndCast(_G.FAILED or "Failed") end
+    -- e.g. a queued next spell that couldn't start: not about the cast on the bar
+    if mode == "cast" and Mine(arg2) then EndCast(_G.FAILED or "Failed") end
   elseif event == "UNIT_SPELLCAST_STOP" or event == "UNIT_SPELLCAST_CHANNEL_STOP" then
     EndCast(nil)
   elseif event == "PLAYER_DEAD" then
