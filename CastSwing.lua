@@ -99,6 +99,8 @@ local function StartCast(channel)
   castStart, castEnd = startMS / 1000, endMS / 1000
   SetColor(channel and COLORS.channel or COLORS.cast)
   castName = ns.Readable(name) and name or ""
+  -- some objects' casts come with the game's missing-text placeholder ("Opening - No Text")
+  castName = castName:gsub("%s*%-%s*[Nn]o [Tt]ext%s*$", "")
   leftText:SetText(castName)
   SetIcon(tex) -- the spell being cast
   f:SetAlpha(1)

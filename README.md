@@ -29,6 +29,7 @@ Swing timer while you fight, cast bar while you cast, then right back to the swi
 - Positions aren't saved per Edit Mode layout.
 
 ## Recent changes
+- **1.2.2:** No more "- No Text" after some object casts (e.g. "Opening").
 - **1.2.1:** No more red flash for casts that go through at the last moment.
 - **1.2.0:** New settings style; success flash with your own color.
 - **1.1.0:** Choose which weapon's swing to track.
