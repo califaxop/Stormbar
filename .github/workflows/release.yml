@@ -1,5 +1,5 @@
 # Releases the addon to CurseForge whenever a push to main changes the toc's "## Version:".
-# The upload notes are that version's line under "Changelogs" in README.md.
+# The upload notes are that version's line under "Recent changes" in README.md.
 # After a successful upload, the version is tagged (v1.2.3); a tagged version is never uploaded again.
 # Needs the repository secret PJ_API_KEY (a CurseForge API token).
 # "Run workflow" on the Actions tab releases the current version by hand (unless it's already tagged).
@@ -72,7 +72,9 @@ jobs:
           GV=$(curl -sS --fail-with-body -H "X-Api-Token: $CF_API_KEY" "$API/game/versions" \
             | jq -r --arg n "$GAME_VERSION" '[.[] | select(.name == $n)][0].id // empty')
           if [ -z "$GV" ]; then echo "::error::CurseForge has no game version named $GAME_VERSION"; exit 1; fi
-          NOTES=$(grep -m1 -F -- "- $VERSION:" README.md || true)
+          # the line reads "- **1.2.3:** what changed": keep just "what changed"
+          NOTES=$( (grep -m1 -F -- "- **$VERSION:**" README.md || grep -m1 -F -- "- $VERSION:" README.md || true) \
+            | sed -E 's/^- (\*\*)?[^ ]+:(\*\*)? *//')
           [ -n "$NOTES" ] || NOTES="Version $VERSION"
           echo "$NOTES" > .release/notes.txt
           # metadata goes in a file: curl would cut a ";" in the changelog text short

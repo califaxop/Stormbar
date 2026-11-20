@@ -405,3 +405,30 @@ function UI.Scroll(parent, width, height)
   scroll.Update = update
   return scroll, content
 end
+
+-- A small window with a link, selected and ready to copy (addons can't open a browser).
+function UI.ShowLink(name, title, url)
+  local win = _G[name]
+  if not win then
+    win = UI.Window(name, 400, 118)
+    win:SetPoint("CENTER", 0, 120)
+    win.title = UI.Text(win, "title", "")
+    win.title:SetPoint("TOPLEFT", 20, -18)
+    local note = UI.Text(win, "note", "Press Ctrl+C to copy, then paste it into your browser.")
+    note:SetPoint("TOPLEFT", 20, -44)
+    win.edit = UI.Edit(win, 360, { function() return win.url end, function() end })
+    win.edit:SetPoint("TOPLEFT", 20, -66)
+    -- keep the link intact if someone types in the box
+    win.edit:HookScript("OnTextChanged", function(self, user)
+      if user and self:GetText() ~= win.url then self:SetText(win.url); self:HighlightText() end
+    end)
+    win.edit:HookScript("OnEditFocusGained", function(self) self:HighlightText() end)
+    win.edit:HookScript("OnEscapePressed", function() win:Hide() end)
+  end
+  win.url = url
+  win.title:SetText(title)
+  win.edit:SetText(url)
+  win:Show()
+  win.edit:SetFocus()
+  win.edit:HighlightText()
+end

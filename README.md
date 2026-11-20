@@ -28,7 +28,11 @@ Swing timer while you fight, cast bar while you cast, then right back to the swi
 - The swing timer needs WoW: Forever's swing event; without it, only the cast bar works.
 - Positions aren't saved per Edit Mode layout.
 
+## Feedback
+Found a bug or have an idea? [Open an issue](https://github.com/califaxop/stormbar/issues/new/choose): there's a short form for each. The settings window has a "Feedback" button with this link too.
+
 ## Recent changes
+- **1.2.3:** New "Report a bug / suggest" button in the settings, linking to a short feedback form.
 - **1.2.2:** No more "- No Text" after some object casts (e.g. "Opening").
 - **1.2.1:** No more red flash for casts that go through at the last moment.
 - **1.2.0:** New settings style; success flash with your own color.

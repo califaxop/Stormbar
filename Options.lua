@@ -137,6 +137,10 @@ local function BuildWindow()
     for _, x in ipairs(w) do x.Refresh() end
   end)
   ra:SetPoint("LEFT", rp, "RIGHT", 6, 0)
+  local fb = UI.Button(window, "Report a bug / suggest", 170, function()
+    UI.ShowLink("StormbarLinkWindow", "Stormbar: bugs and ideas", "https://github.com/califaxop/stormbar/issues/new/choose")
+  end)
+  fb:SetPoint("LEFT", ra, "RIGHT", 6, 0)
 
   window:SetScript("OnShow", function() for _, x in ipairs(w) do x.Refresh() end end)
   window:Hide()
