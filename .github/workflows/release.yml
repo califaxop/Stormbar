@@ -43,7 +43,7 @@ jobs:
           TITLE=$(sed -n 's/^## Title: *//p' "$TOC" | tr -d '\r')
           [ -n "$TITLE" ] || TITLE="$ADDON"
           echo "TITLE=$TITLE" >> "$GITHUB_ENV"
-          echo "ZIPNAME=$(echo "$TITLE" | tr -d ' ')-$VERSION.zip" >> "$GITHUB_ENV"
+          echo "ZIPNAME=$(echo "$TITLE" | tr -cd 'A-Za-z0-9')-$VERSION.zip" >> "$GITHUB_ENV"  # letters and digits only
           echo "ADDON=$ADDON" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
