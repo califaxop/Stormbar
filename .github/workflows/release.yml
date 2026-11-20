@@ -38,6 +38,12 @@ jobs:
           if [ -z "$VERSION" ] || [ -z "$PROJECT_ID" ]; then
             echo "::error::$TOC needs ## Version and ## X-Curse-Project-ID"; exit 1
           fi
+          # the file on CurseForge is named after the in-game title ("Hereabouts 1.2.3",
+          # Hereabouts-1.2.3.zip); the folder inside the zip keeps the addon's folder name
+          TITLE=$(sed -n 's/^## Title: *//p' "$TOC" | tr -d '\r')
+          [ -n "$TITLE" ] || TITLE="$ADDON"
+          echo "TITLE=$TITLE" >> "$GITHUB_ENV"
+          echo "ZIPNAME=$(echo "$TITLE" | tr -d ' ')-$VERSION.zip" >> "$GITHUB_ENV"
           echo "ADDON=$ADDON" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
@@ -56,8 +62,8 @@ jobs:
           mkdir -p ".release/$ADDON"
           rsync -a --exclude='.git*' --exclude='.github' --exclude='.release' \
             --exclude='README.md' --exclude='CHANGELOG.md' --exclude='*.zip' ./ ".release/$ADDON/"
-          (cd .release && zip -qr "$ADDON-$VERSION.zip" "$ADDON")
-          unzip -l ".release/$ADDON-$VERSION.zip"
+          (cd .release && zip -qr "$ZIPNAME" "$ADDON")
+          unzip -l ".release/$ZIPNAME"
 
       - name: Upload to CurseForge
         if: steps.check.outputs.release == 'yes'
@@ -78,15 +84,15 @@ jobs:
           [ -n "$NOTES" ] || NOTES="Version $VERSION"
           echo "$NOTES" > .release/notes.txt
           # metadata goes in a file: curl would cut a ";" in the changelog text short
-          jq -cn --arg name "$ADDON $VERSION" --arg notes "$NOTES" --argjson gv "$GV" \
+          jq -cn --arg name "$TITLE $VERSION" --arg notes "$NOTES" --argjson gv "$GV" \
             '{displayName: $name, releaseType: "release", gameVersions: [$gv], changelog: $notes, changelogType: "markdown"}' \
             > .release/metadata.json
           cat .release/metadata.json
           curl -sS --fail-with-body -H "X-Api-Token: $CF_API_KEY" \
-            -F "metadata=<.release/metadata.json" -F "file=@.release/$ADDON-$VERSION.zip" \
+            -F "metadata=<.release/metadata.json" -F "file=@.release/$ZIPNAME" \
             "$API/projects/$PROJECT_ID/upload-file"
           echo
-          echo "Uploaded $ADDON $VERSION to CurseForge project $PROJECT_ID"
+          echo "Uploaded $TITLE $VERSION ($ZIPNAME) to CurseForge project $PROJECT_ID"
 
       - name: Tag the released version
         if: steps.check.outputs.release == 'yes'
