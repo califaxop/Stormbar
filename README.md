@@ -28,6 +28,9 @@ Swing timer while you fight, cast bar while you cast, then right back to the swi
 - The swing timer needs WoW: Forever's swing event; without it, only the cast bar works.
 - Positions aren't saved per Edit Mode layout.
 
+## Updates
+New versions come out every **Wednesday at 12:00 UTC** (8 PM Philippine time, 8 AM US Eastern). Urgent fixes ship sooner.
+
 ## Feedback
 Found a bug or have an idea? [Open an issue](https://github.com/califaxop/stormbar/issues/new/choose): there's a short form for each. The settings window has a "Feedback" button with this link too.
 
