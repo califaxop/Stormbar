@@ -35,6 +35,16 @@ spark:SetBlendMode("ADD"); spark:SetWidth(12)
 local leftText = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 leftText:SetPoint("LEFT", 6, 0); leftText:SetJustifyH("LEFT")
 local rightText = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+-- the time on the right is set only when what it shows changes (not every frame)
+local rightShown
+local function SetRight(t)
+  if t ~= rightShown then rightShown = t; rightText:SetText(t) end
+end
+local function SetRightTime(left)
+  if not ns.db.castSwing.showTime then SetRight(""); return end
+  local tenths = math.floor(math.max(0, left) * 10 + 0.5)
+  if tenths ~= rightShown then rightShown = tenths; rightText:SetText(format("%.1f", tenths / 10)) end
+end
 rightText:SetPoint("RIGHT", -6, 0)
 leftText:SetPoint("RIGHT", rightText, "LEFT", -6, 0); leftText:SetWordWrap(false)
 
@@ -85,7 +95,7 @@ local function ShowSwingIdle()
   ShowWeaponIcon()
   leftText:SetText(Tracked().text)
   if mode == "idle" then
-    bar:SetValue(0); spark:Hide(); rightText:SetText(ns.db.castSwing.showTime and "0.0" or "")
+    bar:SetValue(0); spark:Hide(); SetRight(ns.db.castSwing.showTime and "0.0" or "")
   end
   f:SetAlpha((mode == "idle" and ns.db.castSwing.hideIdle) and 0 or 1)
 end
@@ -118,7 +128,7 @@ local function CastDone()
   local lateFail = (mode == "fail" and GetTime() - failAt < 0.6)
   if mode ~= "cast" and mode ~= "channel" and mode ~= "pending" and not lateFail then return end
   mode = "done"; failUntil = GetTime() + 0.4
-  SetColor(ns.db.castSwing.doneColor or COLORS.done); bar:SetValue(1); spark:Hide(); rightText:SetText("")
+  SetColor(ns.db.castSwing.doneColor or COLORS.done); bar:SetValue(1); spark:Hide(); SetRight("")
   if castName then leftText:SetText(castName) end
 end
 
@@ -130,12 +140,12 @@ local function EndCast(failed)
     -- went through. Wait a moment for that before showing red.
     if mode == "cast" and now >= castEnd - 0.3 then
       mode = "pending"; pendingUntil = now + 0.3; pendingText = failed
-      bar:SetValue(1); spark:Hide(); rightText:SetText("")
+      bar:SetValue(1); spark:Hide(); SetRight("")
       return
     end
     mode = "fail"; failUntil = now + 0.5; failAt = now
     SetColor(COLORS.fail); bar:SetValue(1); spark:Hide()
-    leftText:SetText(failed); rightText:SetText("")
+    leftText:SetText(failed); SetRight("")
   elseif mode == "channel" and GetTime() >= castEnd - 0.25 then
     CastDone() -- the channel ran to its end
   else
@@ -152,14 +162,14 @@ f:SetScript("OnUpdate", function()
     if p >= 1 then
       if mode == "channel" then CastDone(); return end
       -- a cast: hold it full until the game says it went off (then green) or stopped
-      bar:SetValue(1); spark:Hide(); rightText:SetText("")
+      bar:SetValue(1); spark:Hide(); SetRight("")
       if now > castEnd + 0.5 then ShowSwingIdle() end
       return
     end
     if mode == "channel" then p = 1 - p end
     bar:SetValue(p)
     spark:SetPoint("CENTER", bar, "LEFT", bar:GetWidth() * p, 0); spark:Show()
-    rightText:SetText(showTime and format("%.1f", math.max(0, castEnd - now)) or "")
+    SetRightTime(castEnd - now)
   elseif mode == "pending" then
     -- no confirmation came: it really was interrupted
     if now >= pendingUntil then
@@ -173,7 +183,7 @@ f:SetScript("OnUpdate", function()
     if p >= 1 then ShowSwingIdle(); return end
     bar:SetValue(p)
     spark:SetPoint("CENTER", bar, "LEFT", bar:GetWidth() * p, 0); spark:Show()
-    rightText:SetText(showTime and format("%.1f", math.max(0, swingStart + swingDur - now)) or "")
+    SetRightTime(swingStart + swingDur - now)
   end
 end)
 
