@@ -114,7 +114,7 @@ function ns.Border(owner, region, thin)
   else
     -- the game's own tooltip border, so the bar looks native; its line sits about 3 px in
     b:SetBackdrop({ edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 12 })
-    b:SetBackdropBorderColor(0.8, 0.8, 0.8, 1)
+    b:SetBackdropBorderColor(0.86, 0.66, 0.36, 1) -- bronze, like the default frames' borders
     out = 3
   end
   b:ClearAllPoints()
