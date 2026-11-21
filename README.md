@@ -32,6 +32,7 @@ Swing timer while you fight, cast bar while you cast, then right back to the swi
 Found a bug or have an idea? [Open an issue](https://github.com/califaxop/stormbar/issues/new/choose): there's a short form for each. The settings window has a "Feedback" button with this link too.
 
 ## Recent changes
+- **1.2.6:** Native look: the bar and its icon use the game's own tooltip border (without FlareUI style).
 - **1.2.5:** Lighter: the time on the bar is redrawn only when it changes (10 times a second instead of every frame).
 - **1.2.4:** The "Report a bug / suggest" link box is solid now and stays put over the settings window until you close it.
 - **1.2.3:** New "Report a bug / suggest" button in the settings, linking to a short feedback form.

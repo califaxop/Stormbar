@@ -91,7 +91,7 @@ function ns.FlareMedia(kind, name, fallback)
   return (lsm and lsm:Fetch(kind, name, true)) or fallback
 end
 
--- A border around `region` (an icon or a bar): FlareUI Frames in bronze, or a plain dark edge.
+-- A border around `region` (an icon or a bar): FlareUI Frames in bronze, or the game's tooltip border.
 function ns.Border(owner, region, thin)
   local b = owner.SB_Border
   if not b then
@@ -112,9 +112,10 @@ function ns.Border(owner, region, thin)
     b:SetBackdropBorderColor(c[1], c[2], c[3], 1)
     out = edge == 8 and 4 or 3
   else
-    b:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-    b:SetBackdropBorderColor(0, 0, 0, 1)
-    out = 1 -- a plain 1 px line just outside
+    -- the game's own tooltip border, so the bar looks native; its line sits about 3 px in
+    b:SetBackdrop({ edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 12 })
+    b:SetBackdropBorderColor(0.8, 0.8, 0.8, 1)
+    out = 3
   end
   b:ClearAllPoints()
   b:SetPoint("TOPLEFT", region, "TOPLEFT", -out, out)
