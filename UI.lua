@@ -331,6 +331,47 @@ function UI.Window(name, width, height)
   return win
 end
 
+-- A pop-up (a prompt, a Yes/No box, a link to copy): solid, not see-through, and held in the
+-- middle of the window it came from (UI.host), which is dimmed and can't be clicked behind it.
+local popups = {}
+function UI.Popup(name, width, height)
+  local win = UI.Window(name, width, height)
+  win:SetFrameStrata("FULLSCREEN_DIALOG")
+  win:SetMovable(false); win:SetScript("OnDragStart", nil); win:SetScript("OnDragStop", nil)
+  local solid = win:CreateTexture(nil, "BACKGROUND", nil, -8)
+  solid:SetColorTexture(0.04, 0.035, 0.03, 1)
+  solid:SetPoint("TOPLEFT", 3, -3); solid:SetPoint("BOTTOMRIGHT", -3, 3)
+  win.shade = CreateFrame("Frame", nil, win)
+  win.shade:EnableMouse(true) -- clicks on the window behind go nowhere while this is open
+  local dim = win.shade:CreateTexture(nil, "BACKGROUND")
+  dim:SetAllPoints(); dim:SetColorTexture(0, 0, 0, 0.55)
+  -- placed every time it opens (a new frame starts out shown, so it's hidden below until asked for)
+  function win.Place(self)
+    self = self or win
+    local host = UI.host
+    self:ClearAllPoints()
+    if host and host:IsShown() then
+      self:SetScale(host:GetScale())
+      self:SetPoint("CENTER", host, "CENTER", 0, 40)
+      self.shade:ClearAllPoints(); self.shade:SetAllPoints(host); self.shade:Show()
+    else
+      self:SetScale(1)
+      self:SetPoint("CENTER", UIParent, "CENTER", 0, 120)
+      self.shade:Hide()
+    end
+    self.shade:SetFrameLevel(math.max(0, self:GetFrameLevel() - 1))
+  end
+  win:HookScript("OnShow", win.Place)
+  win:Hide()
+  popups[#popups + 1] = win
+  return win
+end
+-- the window pop-ups belong to; they close with it
+function UI.SetHost(host)
+  UI.host = host
+  host:HookScript("OnHide", function() for _, p in ipairs(popups) do p:Hide() end end)
+end
+
 -- tabs along the top of a window: { { "Name", buildFn(page) }, ... }; returns Select(i)
 function UI.Tabs(win, defs, x0, y, pageW, pageH)
   local tabs, pages, current = {}, {}, 1
@@ -410,8 +451,7 @@ end
 function UI.ShowLink(name, title, url)
   local win = _G[name]
   if not win then
-    win = UI.Window(name, 400, 118)
-    win:SetPoint("CENTER", 0, 120)
+    win = UI.Popup(name, 400, 118)
     win.title = UI.Text(win, "title", "")
     win.title:SetPoint("TOPLEFT", 20, -18)
     local note = UI.Text(win, "note", "Press Ctrl+C to copy, then paste it into your browser.")
@@ -428,7 +468,7 @@ function UI.ShowLink(name, title, url)
   win.url = url
   win.title:SetText(title)
   win.edit:SetText(url)
-  win:Show()
+  win:Place(); win:Show()
   win.edit:SetFocus()
   win.edit:HighlightText()
 end

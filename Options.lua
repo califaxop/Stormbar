@@ -104,6 +104,7 @@ local window
 local function BuildWindow()
   window = UI.Window("StormbarOptionsWindow", 580, 456)
   window:SetPoint("CENTER")
+  UI.SetHost(window) -- pop-ups (the bug / idea link) sit over this window
   local title = UI.Text(window, "title", "Stormbar")
   title:SetPoint("TOPLEFT", 26, -20)
   UI.Text(window, "note", "Swing timer and cast bar in one."):SetPoint("LEFT", title, "RIGHT", 10, -1)
