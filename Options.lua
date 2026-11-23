@@ -130,6 +130,7 @@ local function BuildWindow()
   check("Hide FlareUI's swing bar (same weapon)", "hideFlareSwing", -276)
   sec = UI.Section(window, "Look", CW); sec:SetPoint("TOPLEFT", R, -312)
   check("FlareUI style (needs FlareUI)", "flareStyle", -344, false, function() ApplyAll(); UI.Restyle() end)
+  check("EllesmereUI style (needs EllesmereUI)", "euiStyle", -368, false, function() ApplyAll(); UI.Restyle() end)
 
   local rp = UI.Button(window, "Reset position", 130, function() ns.ResetPosition("castSwing") end)
   rp:SetPoint("BOTTOMLEFT", L, 20)

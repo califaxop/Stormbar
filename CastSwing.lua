@@ -245,6 +245,13 @@ function C.Apply()
   bar:SetStatusBarTexture(ns.BarTexture())
   spark:SetHeight(h * 2.2)
   ns.Border(f, bar, true)
+  -- text: EllesmereUI's font in its style, else the game's
+  local S = ns.UsingEUI()
+  local okF, path, flag = false
+  if S then okF, path, flag = pcall(S.GetFont) end
+  for _, t in ipairs({ leftText, rightText }) do
+    if okF and type(path) == "string" then t:SetFont(path, 11, flag or "") else t:SetFontObject("GameFontHighlightSmall") end
+  end
   f:Show()
   if mode == "idle" or mode == "swing" then ShowSwingIdle() end
   -- Blizzard's own cast bar is replaced by this one
@@ -256,6 +263,9 @@ end
 
 -- FlareUI's own cast bar and Main Hand swing bar (FlareUI makes them after login,
 -- so this runs again a moment later).
+-- EllesmereUI's looks changed (its skin arrived at login, or the player recoloured it)
+function ns.OnLooksChanged() if ns.db then C.Apply() end end
+
 function C.ApplyFlare()
   ns.FadeFrame("FlareUI_UF_PlayerCastBar", ns.db.hideFlareCast)
   -- only FlareUI's bar for the weapon Stormbar tracks; its other swing bars are left alone

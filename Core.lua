@@ -11,6 +11,7 @@ ns.DEFAULTS = {
   editMode      = true,  -- movable while Blizzard's Edit Mode is open
   snapGrid      = true,  -- in Edit Mode, drop onto Blizzard's grid (when its Snap is on)
   flareStyle    = true,  -- FlareUI look when FlareUI is installed
+  euiStyle = true,       -- EllesmereUI look when EllesmereUI is installed (its skinning API)
   hideBlizzCast = true,  -- hide Blizzard's cast bar (Stormbar replaces it)
   hideFlareCast = true,  -- hide FlareUI's Player Cast Bar (it replaces Blizzard's when FlareUI is on)
   hideFlareSwing = true, -- hide FlareUI's swing bar for the weapon Stormbar tracks
@@ -91,6 +92,9 @@ function ns.FlareMedia(kind, name, fallback)
   return (lsm and lsm:Fetch(kind, name, true)) or fallback
 end
 
+-- EllesmereUI style (UI.lua: its skinning API): flat bars, a 1 px black border, its font
+function ns.UsingEUI() return ns.UI and ns.UI.EUI and ns.UI.EUI() or nil end
+
 -- A border around `region` (an icon or a bar): FlareUI Frames in bronze, or the game's tooltip border.
 function ns.Border(owner, region, thin)
   local b = owner.SB_Border
@@ -103,7 +107,11 @@ function ns.Border(owner, region, thin)
   -- dark background stop at the line instead of poking past it.
   local out
   b:SetFrameLevel(owner:GetFrameLevel() + 2)
-  if ns.UsingFlare() then
+  if ns.UsingEUI() then
+    b:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+    b:SetBackdropBorderColor(0, 0, 0, 1)
+    out = 1
+  elseif ns.UsingFlare() then
     local file = ns.FlareMedia("border", thin and "FlareUI Thin" or "FlareUI Frames",
       "Interface/AddOns/FlareUI/Media/Borders/FlareUI-Frames.tga")
     local edge = (thin and file:find("Thin")) and 8 or 16
@@ -125,6 +133,7 @@ function ns.Border(owner, region, thin)
 end
 
 function ns.BarTexture()
+  if ns.UsingEUI() then return "Interface\\Buttons\\WHITE8X8" end -- (EllesmereUI's flat bars)
   if ns.UsingFlare() then
     return ns.FlareMedia("statusbar", "FlareUI Forever", "Interface\\TargetingFrame\\UI-StatusBar")
   end
