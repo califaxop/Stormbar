@@ -10,8 +10,6 @@ ns.DEFAULTS = {
   locked        = true,
   editMode      = true,  -- movable while Blizzard's Edit Mode is open
   snapGrid      = true,  -- in Edit Mode, drop onto Blizzard's grid (when its Snap is on)
-  flareStyle    = true,  -- FlareUI look when FlareUI is installed
-  euiStyle = true,       -- EllesmereUI look when EllesmereUI is installed (its skinning API)
   hideBlizzCast = true,  -- hide Blizzard's cast bar (Stormbar replaces it)
   hideFlareCast = true,  -- hide FlareUI's Player Cast Bar (it replaces Blizzard's when FlareUI is on)
   hideFlareSwing = true, -- hide FlareUI's swing bar for the weapon Stormbar tracks
@@ -50,6 +48,7 @@ function ns.LoadDB()
     cs.show = nil
     if cs.width == 0 then cs.width = 260 end -- "match the centre bar" no longer exists
   end
+  StormbarDB.flareStyle, StormbarDB.euiStyle = nil, nil -- the look follows EllesmereUI / FlareUI on its own
   Merge(StormbarDB, ns.DEFAULTS)
   ns.db = StormbarDB
 end
@@ -85,7 +84,7 @@ function ns.FlareLoaded()
   return (C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded("FlareUI"))
     or (IsAddOnLoaded and IsAddOnLoaded("FlareUI")) or false
 end
-function ns.UsingFlare() return ns.db and ns.db.flareStyle and ns.FlareLoaded() end
+function ns.UsingFlare() return ns.FlareLoaded() end -- FlareUI's look whenever it's installed
 
 function ns.FlareMedia(kind, name, fallback)
   local lsm = LSM()
