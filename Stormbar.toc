@@ -3,7 +3,7 @@
 ## Notes: A merged main-hand swing timer and cast bar. Matches FlareUI when installed.
 ## IconTexture: Interface\AddOns\Stormbar\media\Logo
 ## Author: You
-## Version: 1.3.0
+## Version: 1.3.1
 ## X-Curse-Project-ID: 1811766
 ## SavedVariables: StormbarDB
 ## OptionalDeps: EllesmereUI, FlareUI
