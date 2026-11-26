@@ -296,11 +296,6 @@ function ns.ResetPosition(key)
   ns.PlaceMover(key)
 end
 
-function ns.ResetPositions()
-  wipe(ns.db.pos)
-  for key in pairs(ns.movers) do ns.PlaceMover(key) end
-end
-
 -- Hide a Blizzard frame by moving it into a hidden container (works even if Blizzard re-shows it).
 local hider = CreateFrame("Frame", nil, UIParent)
 hider:Hide()

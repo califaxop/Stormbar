@@ -328,26 +328,6 @@ function UI.Toggle(parent, width, options, opt, onChange, tip)
   return b
 end
 
--- "<  value  >": a choice that clearly looks adjustable (arrows either side of a Toggle)
-function UI.Selector(parent, width, options, opt, onChange, tip)
-  local f = CreateFrame("Frame", nil, parent)
-  f:SetSize(width, 22)
-  local mid = UI.Toggle(f, width - 56, options, opt, onChange, tip)
-  mid:SetPoint("LEFT", 28, 0)
-  local function stepBy(d)
-    local get, set = opt[1], opt[2]
-    local i = 1
-    for k, o in ipairs(options) do if o[1] == get() then i = k end end
-    i = (i - 1 + d) % #options + 1
-    set(options[i][1]); mid.Refresh()
-    if onChange then onChange() end
-  end
-  local prev = UI.Button(f, "<", 24, function() stepBy(-1) end); prev:SetPoint("LEFT", 0, 0)
-  local nxt = UI.Button(f, ">", 24, function() stepBy(1) end); nxt:SetPoint("RIGHT", 0, 0)
-  f.Refresh = mid.Refresh
-  return f
-end
-
 -- text box; commit(text) on Enter or leaving it; Esc reverts. spells = accept spells dragged in.
 function UI.Edit(parent, width, opt, placeholder, spells, numeric)
   local get, set = opt[1], opt[2]
@@ -458,81 +438,6 @@ end
 function UI.SetHost(host)
   UI.host = host
   host:HookScript("OnHide", function() for _, p in ipairs(popups) do p:Hide() end end)
-end
-
--- tabs along the top of a window: { { "Name", buildFn(page) }, ... }; returns Select(i)
-function UI.Tabs(win, defs, x0, y, pageW, pageH)
-  local tabs, pages, current = {}, {}, 1
-  local line = win:CreateTexture(nil, "ARTWORK")
-  line:SetPoint("TOPLEFT", x0, y); line:SetPoint("TOPRIGHT", -x0, y); line:SetHeight(1)
-  local function paint(th)
-    th = th or UI.Theme()
-    line:SetColorTexture(RGB(th.eui and th.edge or th.accent, th.eui and 1 or 0.5))
-    for i, t in ipairs(tabs) do
-      t.text:SetFontObject(th.headerFont)
-      t.text:SetTextColor(RGB(i == current and th.title or (t.hover and th.hover or th.dim)))
-      t.bar:SetColorTexture(RGB(th.accent)); t.bar:SetShown(i == current)
-    end
-  end
-  local function Select(i)
-    current = i
-    for k, pg in ipairs(pages) do pg:SetShown(k == i) end
-    paint()
-  end
-  local x = x0
-  for i, def in ipairs(defs) do
-    local t = CreateFrame("Button", nil, win)
-    t.text = t:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    t.text:SetFontObject(UI.Theme().headerFont); t.text:SetText(def[1])
-    t.text:SetPoint("BOTTOM", 0, 6)
-    local w = math.max(60, math.floor((t.text:GetStringWidth() or 0) + 0.5) + 22)
-    t:SetSize(w, 26); t:SetPoint("BOTTOMLEFT", win, "TOPLEFT", x, y)
-    t.bar = t:CreateTexture(nil, "OVERLAY")
-    t.bar:SetHeight(2); t.bar:SetPoint("BOTTOMLEFT", 6, 0); t.bar:SetPoint("BOTTOMRIGHT", -6, 0)
-    t:SetScript("OnClick", function() Select(i) end)
-    t:SetScript("OnEnter", function() t.hover = true; paint() end)
-    t:SetScript("OnLeave", function() t.hover = false; paint() end)
-    tabs[i] = t
-    x = x + w + 4
-    local pg = CreateFrame("Frame", nil, win)
-    pg:SetPoint("TOPLEFT", x0, y - 14); pg:SetSize(pageW, pageH)
-    def[2](pg)
-    pg:Hide()
-    pages[i] = pg
-  end
-  UI.Skin(paint)
-  Select(1)
-  return Select
-end
-
--- a vertical scroll area: returns the scroll frame and its content frame
-function UI.Scroll(parent, width, height)
-  local scroll = CreateFrame("ScrollFrame", nil, parent)
-  scroll:SetSize(width, height)
-  local content = CreateFrame("Frame", nil, scroll)
-  content:SetSize(width - 10, 1)
-  scroll:SetScrollChild(content)
-  local thumb = scroll:CreateTexture(nil, "OVERLAY")
-  thumb:SetTexture(W); thumb:SetWidth(3)
-  UI.Skin(function(th) if th.eui then thumb:SetVertexColor(1, 1, 1, 0.5) else thumb:SetVertexColor(RGB(th.box, 0.9)) end end)
-  local function update()
-    local max = math.max(0, content:GetHeight() - scroll:GetHeight())
-    if (scroll:GetVerticalScroll() or 0) > max then scroll:SetVerticalScroll(max) end
-    if max <= 0 then thumb:Hide(); return end
-    local h = scroll:GetHeight()
-    local th = math.max(16, h * h / (h + max))
-    thumb:SetHeight(th); thumb:ClearAllPoints()
-    thumb:SetPoint("TOPRIGHT", scroll, "TOPRIGHT", 0, -((scroll:GetVerticalScroll() or 0) / max) * (h - th))
-    thumb:Show()
-  end
-  scroll:EnableMouseWheel(true)
-  scroll:SetScript("OnMouseWheel", function(self, d)
-    local max = math.max(0, content:GetHeight() - self:GetHeight())
-    self:SetVerticalScroll(math.max(0, math.min(max, (self:GetVerticalScroll() or 0) - d * 40)))
-    update()
-  end)
-  scroll.Update = update
-  return scroll, content
 end
 
 -- A small window with a link, selected and ready to copy (addons can't open a browser).

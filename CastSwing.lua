@@ -155,7 +155,6 @@ end
 
 f:SetScript("OnUpdate", function()
   local now = GetTime()
-  local showTime = ns.db.castSwing.showTime
   if mode == "cast" or mode == "channel" then
     local total = castEnd - castStart
     local p = total > 0 and (now - castStart) / total or 1
