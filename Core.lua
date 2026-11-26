@@ -48,7 +48,6 @@ function ns.LoadDB()
     cs.show = nil
     if cs.width == 0 then cs.width = 260 end -- "match the centre bar" no longer exists
   end
-  StormbarDB.flareStyle, StormbarDB.euiStyle = nil, nil -- the look follows EllesmereUI / FlareUI on its own
   Merge(StormbarDB, ns.DEFAULTS)
   ns.db = StormbarDB
 end
