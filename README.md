@@ -23,6 +23,7 @@ Swing timer while you fight, cast bar while you cast, then right back to the swi
 | `/stb unlock` / `lock` | Move the bar without Edit Mode |
 | `/stb reset` | Reset its position |
 | `/stb debug` | Show what the bar sees |
+| `/stb report` | Bugs & Feedback: the form's link and a line to paste into it |
 
 ## Good to know
 - The swing timer needs WoW: Forever's swing event; without it, only the cast bar works.
@@ -32,7 +33,7 @@ Swing timer while you fight, cast bar while you cast, then right back to the swi
 New versions come out every **Wednesday at 12:00 UTC** (8 PM Philippine time, 8 AM US Eastern). Urgent fixes ship sooner.
 
 ## Feedback
-Found a bug or have an idea? [Open an issue](https://github.com/califaxop/stormbar/issues/new/choose): there's a short form for each. The settings window has a "Feedback" button with this link too.
+Found a bug, have feedback or want a feature? Click **Bugs & Feedback** at the top right of the settings window (or type `/stb report`): it gives you the form's link and, for a bug, a line to paste into it with everything we need. Or [open an issue](https://github.com/califaxop/stormbar/issues/new/choose) directly: there's a short form for each.
 
 ## Recent changes
 - **1.4.0:** "Bugs & Feedback" now sits at the top right of the settings window, next to the ×. It opens a window (like Questie's trace export) with the form's link to copy at the top, for bug reports, feedback and feature requests, and for a bug, one line to paste into the form with your version, the game client, the bar's state, its settings and the cast bars it replaces; never your name, realm or guild. Also `/stb report`. The settings window is now solid and comes to the front when opened or clicked: with several addons' settings open, they no longer show through each other.
