@@ -98,13 +98,49 @@ local function BarOptions(parent, x, y, width)
 end
 
 ---------------------------------------------------------------------------
+-- Report a bug (the title bar's button, /stb report): the line to paste and its counters
+---------------------------------------------------------------------------
+local function yes(v) return v and "yes" or "no" end
+local function BugReport()
+  local db, C = ns.db, ns.CastSwing
+  local okB, build, number, _, toc = pcall(GetBuildInfo)
+  local _, class = UnitClass("player")
+  local L = { format("Stormbar; client %s (%s), interface %s; %s %d", okB and tostring(build) or "?",
+    okB and tostring(number) or "?", okB and tostring(toc) or "?", tostring(class), UnitLevel("player")) }
+  L[#L + 1] = format("settings: weapon %s, locked %s, Edit Mode %s, snap %s, hide Blizzard cast %s, hide FlareUI cast %s, hide FlareUI swing %s, scale %.2f, size %dx%d, icon %s, time %s, hide idle %s",
+    tostring(db.swingWeapon), yes(db.locked), yes(db.editMode), yes(db.snapGrid), yes(db.hideBlizzCast), yes(db.hideFlareCast),
+    yes(db.hideFlareSwing), db.scale or 1, db.castSwing.width or 0, db.castSwing.height or 0, yes(db.castSwing.showIcon),
+    yes(db.castSwing.showTime), yes(db.castSwing.hideIdle))
+  L[#L + 1] = format("FlareUI: %s; EllesmereUI: %s", yes(type(FlareUI) == "table"), yes(UI.HasEllesmere()))
+  for _, l in ipairs(C.DebugLines()) do L[#L + 1] = l end
+  local W = C.WEAPONS[db.swingWeapon] or C.WEAPONS.main
+  return table.concat(L, " // "), {
+    { "Interface\\Icons\\INV_Sword_04", "Swing timer", C.swingEventOK and "on" or "off (no swing event)" },
+    { "Interface\\Icons\\Ability_DualWield", "Tracking", W.text },
+    { "Interface\\Icons\\Spell_Nature_Lightning", "Doing now", C.Mode() },
+    { "Interface\\Icons\\INV_Misc_PocketWatch_01", "Locked", yes(db.locked) },
+    { "Interface\\Icons\\INV_Misc_Note_01", "Hides Blizzard's cast bar", yes(db.hideBlizzCast) },
+    { "Interface\\Icons\\INV_Misc_Gem_Pearl_04", "FlareUI", type(FlareUI) == "table" and "installed" or "not installed" },
+  }
+end
+local BUG = { name = "StormbarReportWindow", title = "Stormbar Bug Report", repo = "https://github.com/califaxop/stormbar/issues/new",
+  included = "Included: Stormbar's version, the game client, your class and level, its settings, the bar's state and the cast bars it replaces. Never: your name, realm, guild or other players.",
+  build = BugReport }
+function ns.ShowBugReport(kind)
+  local get = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
+  BUG.version = get and get(ns.name, "Version") or nil
+  return UI.ShowBugReport(BUG, kind)
+end
+
+---------------------------------------------------------------------------
 -- Settings window (/stormbar)
 ---------------------------------------------------------------------------
 local window
 local function BuildWindow()
   window = UI.Window("StormbarOptionsWindow", 580, 456)
   window:SetPoint("CENTER")
-  UI.SetHost(window) -- pop-ups (the bug / idea link) sit over this window
+  UI.SetHost(window) -- pop-ups (the bug report) sit over this window
+  UI.HeaderButton(window, "Report a bug", 110, function() ns.ShowBugReport() end)
   local title = UI.Text(window, "title", "Stormbar")
   title:SetPoint("TOPLEFT", 26, -20)
   UI.Text(window, "note", "Swing timer and cast bar in one."):SetPoint("LEFT", title, "RIGHT", 10, -1)
@@ -136,10 +172,6 @@ local function BuildWindow()
     for _, x in ipairs(w) do x.Refresh() end
   end)
   ra:SetPoint("LEFT", rp, "RIGHT", 6, 0)
-  local fb = UI.Button(window, "Report a bug / suggest", 170, function()
-    UI.ShowLink("StormbarLinkWindow", "Stormbar: bugs and ideas", "https://github.com/califaxop/stormbar/issues/new/choose")
-  end)
-  fb:SetPoint("LEFT", ra, "RIGHT", 6, 0)
 
   window:SetScript("OnShow", function() for _, x in ipairs(w) do x.Refresh() end end)
   window:Hide()
@@ -247,6 +279,8 @@ SlashCmdList.STORMBAR = function(msg)
     ns.Print(ns.db.locked and "locked." or "unlocked: drag the bar to move it, click it for options.")
   elseif cmd == "debug" then
     ns.CastSwing.Debug()
+  elseif cmd == "report" then
+    ns.ShowBugReport()
   elseif cmd == "reset" then
     ns.ResetPosition("castSwing"); ns.Print("position reset.")
   else

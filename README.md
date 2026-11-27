@@ -35,6 +35,7 @@ New versions come out every **Wednesday at 12:00 UTC** (8 PM Philippine time, 8 
 Found a bug or have an idea? [Open an issue](https://github.com/califaxop/stormbar/issues/new/choose): there's a short form for each. The settings window has a "Feedback" button with this link too.
 
 ## Recent changes
+- **1.4.0:** "Report a bug" now sits at the top right of the settings window, next to the ×, and opens a bug report window (like Questie's trace export): the form's link to copy at the top, then one line to paste into the form with your version, the game client, the bar's state, its settings and the cast bars it replaces; never your name, realm or guild. Also `/stb report`. The settings window is now solid and comes to the front when opened or clicked: with several addons' settings open, they no longer show through each other.
 - **1.3.1:** Fixed: the settings window's text is readable with EllesmereUI installed (EllesmereUI's quest tracker shrinks the game's tracker fonts to 1 px, and the window used them). No style settings any more: the look follows EllesmereUI or FlareUI on its own whenever one is installed.
 - **1.3.0:** EllesmereUI style when EllesmereUI is installed: flat bars with a thin black border in its font, and the settings window painted by EllesmereUI's own skinning API (its theme and accent colour). EllesmereUI style can be turned off under Look.
 - **1.2.6:** Native look: the bar, its icon and the settings use the game's own tooltip border in bronze (without FlareUI style).

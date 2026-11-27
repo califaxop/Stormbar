@@ -273,18 +273,23 @@ function C.ApplyFlare()
   end
 end
 
-function C.Debug()
+-- /stb debug and the bug report: the bar, what it's doing, the bars it replaces
+function C.DebugLines()
+  local L = {}
   local p, _, rp, x, y = f:GetPoint()
-  ns.Print(format("bar: shown=%s visible=%s alpha=%.2f scale=%.2f size=%dx%d at %s/%s %.0f,%.0f strata=%s level=%d",
-    tostring(f:IsShown()), tostring(f:IsVisible()), f:GetEffectiveAlpha(), f:GetEffectiveScale(),
-    f:GetWidth(), f:GetHeight(), tostring(p), tostring(rp), x or 0, y or 0, f:GetFrameStrata(), f:GetFrameLevel()))
-  ns.Print("mode: " .. mode .. ", swing event: " .. tostring(C.swingEventOK))
-  ns.Print("tracking: " .. Tracked().text)
+  L[#L + 1] = format("bar: shown=%s visible=%s alpha=%.2f scale=%.2f size=%dx%d at %s/%s %.0f,%.0f strata=%s level=%d",
+    tostring(f:IsShown()), tostring(f:IsVisible()), f:GetEffectiveAlpha() or 0, f:GetEffectiveScale() or 0,
+    f:GetWidth() or 0, f:GetHeight() or 0, tostring(p), tostring(rp), x or 0, y or 0, tostring(f:GetFrameStrata()), f:GetFrameLevel() or 0)
+  L[#L + 1] = "mode: " .. mode .. ", swing event: " .. tostring(C.swingEventOK)
+  L[#L + 1] = "tracking: " .. Tracked().text
   for _, name in ipairs({ "PlayerCastingBarFrame", "FlareUI_UF_PlayerCastBar", Tracked().flare }) do
     local o = _G[name]
-    ns.Print(name .. ": " .. (o and format("exists, visible=%s, alpha=%.2f", tostring(o:IsVisible()), o:GetEffectiveAlpha()) or "not found"))
+    L[#L + 1] = name .. ": " .. (o and format("exists, visible=%s, alpha=%.2f", tostring(o:IsVisible()), o:GetEffectiveAlpha() or 0) or "not found")
   end
+  return L
 end
+function C.Debug() for _, l in ipairs(C.DebugLines()) do ns.Print(l) end end
+function C.Mode() return mode end
 
 function C.Init()
   ns.RegisterMover("castSwing", f, "Swing / Cast", { "BOTTOM", "BOTTOM", 0, 200 })
