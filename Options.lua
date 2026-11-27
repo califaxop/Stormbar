@@ -123,7 +123,7 @@ local function BugReport()
     { "Interface\\Icons\\INV_Misc_Gem_Pearl_04", "FlareUI", type(FlareUI) == "table" and "installed" or "not installed" },
   }
 end
-local BUG = { name = "StormbarReportWindow", title = "Stormbar Bug Report", repo = "https://github.com/califaxop/stormbar/issues/new",
+local BUG = { name = "StormbarReportWindow", title = "Stormbar Bugs & Feedback", repo = "https://github.com/califaxop/stormbar/issues/new",
   included = "Included: Stormbar's version, the game client, your class and level, its settings, the bar's state and the cast bars it replaces. Never: your name, realm, guild or other players.",
   build = BugReport }
 function ns.ShowBugReport(kind)
@@ -140,7 +140,7 @@ local function BuildWindow()
   window = UI.Window("StormbarOptionsWindow", 580, 456)
   window:SetPoint("CENTER")
   UI.SetHost(window) -- pop-ups (the bug report) sit over this window
-  UI.HeaderButton(window, "Report a bug", 110, function() ns.ShowBugReport() end)
+  UI.HeaderButton(window, "Bugs & Feedback", 130, function() ns.ShowBugReport() end)
   local title = UI.Text(window, "title", "Stormbar")
   title:SetPoint("TOPLEFT", 26, -20)
   UI.Text(window, "note", "Swing timer and cast bar in one."):SetPoint("LEFT", title, "RIGHT", 10, -1)
