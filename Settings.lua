@@ -642,5 +642,5 @@ end
 -- opens or closes a settings window, shrunk to fit smaller screens
 function UI.ToggleWindow(w)
   w:SetScale(math.max(0.5, math.min(1, (UIParent:GetHeight() - 40) / w:GetHeight())))
-  w:SetShown(not w:IsShown())
+  if w:IsShown() then w:Hide() else w:Show() end
 end
