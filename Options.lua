@@ -115,8 +115,8 @@ local function StatusPage(_, R)
 end
 
 local function BuildWindow()
-  window = UI.Settings({ name = "StormbarOptionsWindow", title = "Stormbar", logo = "Interface\\AddOns\\Stormbar\\media\\Logo",
-    tagline = "Swing timer and cast bar in one.", bug = function() ns.ShowBugReport() end,
+  window = UI.Settings({ name = "StormbarOptionsWindow", title = "Stormbar",
+    bug = function() ns.ShowBugReport() end,
     pages = {
       { "Bar", "What the bar shows and its size.", function(_, R) R:Section("Bar"); BarOptions(R) end },
       { "Moving", "Unlocking the bar, Edit Mode and its grid.", function(_, R)
@@ -137,13 +137,21 @@ local function BuildWindow()
     categories = { { "Stormbar", { 1, 2, 3 } }, { "Help", { 4 } } } })
 end
 
-function ns.OpenOptions()
+-- the settings window, built the first time it's asked for
+local function GetWindow()
   if not window then
     local ok, e = pcall(BuildWindow)
     if not ok then if window then window:Hide() end; window = nil; ns.Print("settings failed: " .. tostring(e)); return end
   end
-  UI.ToggleWindow(window)
+  return window
 end
+function ns.OpenOptions()
+  local w = GetWindow()
+  if w then UI.ToggleWindow(w) end
+  return w
+end
+UI.JoinSuite("Stormbar", "Swing timer and cast bar in one.",
+  "Interface\\AddOns\\Stormbar\\media\\Logo", 5, GetWindow)
 
 -- Esc > Options > AddOns: a short page with a button that opens the window
 local function CreateOptions()

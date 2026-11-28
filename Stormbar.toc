@@ -11,5 +11,6 @@
 Core.lua
 CastSwing.lua
 UI.lua
+Suite.lua
 Settings.lua
 Options.lua
