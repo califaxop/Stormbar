@@ -1,5 +1,5 @@
 -- Stormbar: settings window (/stormbar or /stb, or Esc > Options > AddOns > Stormbar), the Edit Mode
--- dialog, and start-up. Drawn in the same style as XP Planner and Spell Glow (see UI.lua).
+-- dialog, and start-up. In the game's own Settings design (Settings.lua).
 local _, ns = ...
 local UI = ns.UI
 
@@ -39,62 +39,16 @@ local WEAPONS = {
   { "ranged", (_G.SWING_TIMER_RANGED or "Ranged") .. " (wand / gun / bow)" },
 }
 
--- A color square: click for the game's color picker (Cancel restores the old color).
-local function ColorSwatch(parent, label, path, width)
-  local f = CreateFrame("Button", nil, parent)
-  f:SetSize(width, 20)
-  local sq = CreateFrame("Frame", nil, f, "BackdropTemplate")
-  sq:SetSize(14, 14); sq:SetPoint("LEFT", 0, 0)
-  sq:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-  local text = UI.Text(f, "line", label)
-  text:SetPoint("LEFT", sq, "RIGHT", 7, 0)
-  local hover = false
-  local function color() return S(path)[1]() end
-  local function paint(th)
-    th = th or UI.Theme()
-    local c = ns.db and color()
-    if c then sq:SetBackdropColor(c[1], c[2], c[3]) end
-    sq:SetBackdropBorderColor(UI.RGB(hover and th.title or th.accent))
-    text:SetTextColor(UI.RGB(hover and th.hover or th.line))
-  end
-  UI.Skin(paint)
-  f:SetScript("OnEnter", function() hover = true; paint() end)
-  f:SetScript("OnLeave", function() hover = false; paint() end)
-  f:SetScript("OnClick", function()
-    local c = color()
-    local r, g, b = c[1], c[2], c[3]
-    local function apply()
-      local nr, ng, nb = ColorPickerFrame:GetColorRGB()
-      c[1], c[2], c[3] = nr, ng, nb; paint(); ApplyAll()
-    end
-    local function cancel() c[1], c[2], c[3] = r, g, b; paint(); ApplyAll() end
-    if ColorPickerFrame.SetupColorPickerAndShow then
-      ColorPickerFrame:SetupColorPickerAndShow({ r = r, g = g, b = b, hasOpacity = false, swatchFunc = apply, cancelFunc = cancel })
-    else
-      ColorPickerFrame.func, ColorPickerFrame.cancelFunc = apply, cancel
-      ColorPickerFrame.hasOpacity, ColorPickerFrame.previousValues = false, { r = r, g = g, b = b }
-      ColorPickerFrame:SetColorRGB(r, g, b); ColorPickerFrame:Show()
-    end
-  end)
-  f.Refresh = function() paint() end
-  return f
-end
-
--- The bar's options, shared by the settings window and the Edit Mode dialog.
--- Places them top to bottom at (x, y) in `parent`, `width` wide; returns the widgets and the y below.
-local function BarOptions(parent, x, y, width)
-  local w = {}
-  local function add(widget, h) widget:SetPoint("TOPLEFT", x, y); w[#w + 1] = widget; y = y - h end
-  local wl = UI.Text(parent, "line", "Weapon"); wl:SetPoint("TOPLEFT", x, y); y = y - 18
-  add(UI.Toggle(parent, width, WEAPONS, S("swingWeapon"), ApplyAll, "Which swing to time. Click to switch."), 32)
-  add(UI.Slider(parent, "Scale", width, 0.5, 2, 0.01, S("scale"), pctf, ApplyAll, 100), 42)
-  add(UI.Slider(parent, "Width", width, 100, 600, 1, S("castSwing.width"), px, ApplyAll, 1), 42)
-  add(UI.Slider(parent, "Height", width, 8, 32, 1, S("castSwing.height"), px, ApplyAll, 1), 46)
-  add(UI.Check(parent, "Icon (weapon, or the spell while casting)", S("castSwing.showIcon"), width, ApplyAll), 24)
-  add(UI.Check(parent, "Time remaining", S("castSwing.showTime"), width, ApplyAll), 24)
-  add(UI.Check(parent, "Hide when not swinging or casting", S("castSwing.hideIdle"), width, ApplyAll), 24)
-  add(ColorSwatch(parent, "Color when a cast goes off", "castSwing.doneColor", width), 24)
-  return w, y
+-- The bar's options, shared by the settings window and the Edit Mode dialog, as rows in R
+local function BarOptions(R)
+  R:Toggle("Weapon", 230, WEAPONS, S("swingWeapon"), ApplyAll, "Which swing to time.")
+  R:Slider("Scale", 0.5, 2, 0.01, S("scale"), pctf, ApplyAll, "Type an exact % in the box.", 100, 200)
+  R:Slider("Width", 100, 600, 1, S("castSwing.width"), px, ApplyAll, "Type an exact size in the box.", 1, 200)
+  R:Slider("Height", 8, 32, 1, S("castSwing.height"), px, ApplyAll, "Type an exact size in the box.", 1, 200)
+  R:Check("Icon", S("castSwing.showIcon"), ApplyAll, "The weapon, or the spell while casting.")
+  R:Check("Time remaining", S("castSwing.showTime"), ApplyAll)
+  R:Check("Hide when idle", S("castSwing.hideIdle"), ApplyAll, "Hidden when you're not swinging or casting.")
+  R:Swatch("Cast done colour", function() return S("castSwing.doneColor")[1]() end, ApplyAll, "The bar's colour when a cast goes off.")
 end
 
 ---------------------------------------------------------------------------
@@ -136,45 +90,51 @@ end
 -- Settings window (/stormbar)
 ---------------------------------------------------------------------------
 local window
-local function BuildWindow()
-  window = UI.Window("StormbarOptionsWindow", 580, 456)
-  window:SetPoint("CENTER")
-  UI.SetHost(window) -- pop-ups (the bug report) sit over this window
-  UI.HeaderButton(window, "Bugs & Feedback", 130, function() ns.ShowBugReport() end)
-  local title = UI.Text(window, "title", "Stormbar")
-  title:SetPoint("TOPLEFT", 26, -20)
-  UI.Text(window, "note", "Swing timer and cast bar in one."):SetPoint("LEFT", title, "RIGHT", 10, -1)
-
-  local L, R, CW = 26, 300, 254
-  local sec = UI.Section(window, "Bar", CW); sec:SetPoint("TOPLEFT", L, -54)
-  local w = BarOptions(window, L, -86, CW)
-
-  local function check(label, path, yy, invert, onChange)
-    local c = UI.Check(window, label, S(path, invert), CW, onChange or ApplyAll)
-    c:SetPoint("TOPLEFT", R, yy); w[#w + 1] = c
-    return c
+local function StatusPage(_, R)
+  R:Section("Now")
+  local rows = {}
+  for i = 1, 6 do rows[i] = R:Row("") end
+  local function update()
+    local ok, _, stats = pcall(BugReport)
+    for i, row in ipairs(rows) do
+      local v = ok and stats[i]
+      row.label:SetText(v and v[2] or "")
+      if not row.value then
+        row.value = UI.Font(row, "GameFontHighlight"); row.value:SetPoint("LEFT", R.ctrl, 0)
+      end
+      row.value:SetText(v and tostring(v[3]) or "")
+    end
   end
-  sec = UI.Section(window, "Moving", CW); sec:SetPoint("TOPLEFT", R, -54)
-  check("Unlocked (drag to move)", "locked", -86, true)
-  check("Move in Edit Mode", "editMode", -110)
-  check("Snap to Edit Mode's grid", "snapGrid", -134)
-  local nn = UI.Text(window, "note", "In Edit Mode, click the bar for its options; arrow keys nudge it (Shift: 10 px).")
-  nn:SetPoint("TOPLEFT", R, -160); nn:SetWidth(CW)
-  sec = UI.Section(window, "Replace other bars", CW); sec:SetPoint("TOPLEFT", R, -196)
-  check("Hide Blizzard's cast bar", "hideBlizzCast", -228)
-  check("Hide FlareUI's Player Cast Bar", "hideFlareCast", -252)
-  check("Hide FlareUI's swing bar (same weapon)", "hideFlareSwing", -276)
+  R:Track({ Refresh = update })
+  R:Note("/stb debug: what the bar sees.  /stb report: the bug report.  /stb lock, /stb unlock, /stb reset.")
+  R:Section("Reset")
+  R:Button("Reset position", "Reset", 96, function() ns.ResetPosition("castSwing") end, "The bar back to its default place.")
+  R:Button("Reset everything", "Defaults", 96, function()
+    ns.ResetDB(); ns.ResetPosition("castSwing"); ApplyAll(); window.Refresh()
+  end, "Every setting back to its default, and the bar to its default place.")
+end
 
-  local rp = UI.Button(window, "Reset position", 130, function() ns.ResetPosition("castSwing") end)
-  rp:SetPoint("BOTTOMLEFT", L, 20)
-  local ra = UI.Button(window, "Reset everything", 130, function()
-    ns.ResetDB(); ns.ResetPosition("castSwing"); ApplyAll(); UI.Restyle()
-    for _, x in ipairs(w) do x.Refresh() end
-  end)
-  ra:SetPoint("LEFT", rp, "RIGHT", 6, 0)
-
-  window:SetScript("OnShow", function() for _, x in ipairs(w) do x.Refresh() end end)
-  window:Hide()
+local function BuildWindow()
+  window = UI.Settings({ name = "StormbarOptionsWindow", title = "Stormbar", logo = "Interface\\AddOns\\Stormbar\\media\\Logo",
+    tagline = "Swing timer and cast bar in one.", bug = function() ns.ShowBugReport() end,
+    pages = {
+      { "Bar", "What the bar shows and its size.", function(_, R) R:Section("Bar"); BarOptions(R) end },
+      { "Moving", "Unlocking the bar, Edit Mode and its grid.", function(_, R)
+        R:Section("Moving")
+        R:Check("Unlocked (drag to move)", S("locked", true), ApplyAll)
+        R:Check("Move in Edit Mode", S("editMode"), ApplyAll)
+        R:Check("Snap to Edit Mode's grid", S("snapGrid"), ApplyAll)
+        R:Note("In Edit Mode, click the bar for its options; arrow keys nudge it (Shift: 10 px).")
+      end },
+      { "Other Cast Bars", "The cast and swing bars Stormbar takes the place of.", function(_, R)
+        R:Section("Replace other bars")
+        R:Check("Hide Blizzard's cast bar", S("hideBlizzCast"), ApplyAll)
+        R:Check("Hide FlareUI's Player Cast Bar", S("hideFlareCast"), ApplyAll)
+        R:Check("Hide FlareUI's swing bar", S("hideFlareSwing"), ApplyAll, "When it times the same weapon.")
+      end },
+      { "Status", "What the bar is doing, the commands, and starting afresh.", StatusPage },
+    },
+    categories = { { "Stormbar", { 1, 2, 3 } }, { "Help", { 4 } } } })
 end
 
 function ns.OpenOptions()
@@ -182,8 +142,7 @@ function ns.OpenOptions()
     local ok, e = pcall(BuildWindow)
     if not ok then if window then window:Hide() end; window = nil; ns.Print("settings failed: " .. tostring(e)); return end
   end
-  UI.Restyle()
-  window:SetShown(not window:IsShown())
+  UI.ToggleWindow(window)
 end
 
 -- Esc > Options > AddOns: a short page with a button that opens the window
@@ -209,22 +168,20 @@ end
 ---------------------------------------------------------------------------
 local dialog
 local function BuildDialog()
-  dialog = UI.Window("StormbarPieceDialog", 290, 100)
-  local title = UI.Text(dialog, "title", "Swing / Cast")
-  title:SetPoint("TOPLEFT", 20, -18)
-  local w, y = BarOptions(dialog, 20, -48, 250)
+  dialog = UI.Window("StormbarPieceDialog", 470, 100, "Swing / Cast")
+  local R = UI.Rows(dialog, { width = 470, label = 22, control = 150, y = -34 })
+  BarOptions(R)
   local reset = UI.Button(dialog, "Reset position", 130, function() ns.ResetPosition("castSwing") end)
-  reset:SetPoint("TOPLEFT", 20, y - 6)
-  dialog:SetHeight(-y + 6 + 22 + 20)
-  dialog.Refresh = function() for _, x in ipairs(w) do x.Refresh() end end
-  -- closing it (its ×, or Esc) ends the selection too
+  reset:SetPoint("TOPLEFT", 20, R.y - 8)
+  dialog:SetHeight(-R.y + 8 + 22 + 18)
+  dialog.Refresh = R.Refresh
+  -- closing it (its close button, or Esc) ends the selection too
   dialog:HookScript("OnHide", function() if ns.selected then ns.selected = nil; ns.ApplyLock() end end)
   dialog:Hide()
 end
 
 function ns.OpenPieceDialog(key)
   if not dialog then BuildDialog() end
-  UI.Restyle()
   dialog.Refresh()
   ns.selected = key
   ns.ApplyLock()
